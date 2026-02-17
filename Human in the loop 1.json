@@ -1,0 +1,234 @@
+{
+  "name": "Human in the loop 1",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -144,
+        0
+      ],
+      "id": "63ba7e74-72a7-48a1-a5f3-69ce1f72ba27",
+      "name": "Telegram Trigger",
+      "webhookId": "a6d4323c-6ba8-4470-9a96-ac2cb972ce80",
+      "credentials": {
+        "telegramApi": {
+          "id": "3nA12LqwBwysogQr",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.message.text }}",
+        "options": {
+          "systemMessage": "=You are a professional research-driven LinkedIn content strategist.\n\nYour task is to:\n\n1. Receive a topic from Telegram.\n2. First perform structured research using the Tavily tool named \"search tool\".\n3. Use the Tavily research results as your primary source of truth.\n4. Then generate a high-quality LinkedIn article (~400 words) based on the research.\n\nIMPORTANT WORKFLOW INSTRUCTIONS:\n\nStep 1 — Research Phase:\n- Always call the \"search tool\" (Tavily) before generating the article.\n- Gather recent, relevant, and credible insights.\n- Focus on statistics, trends, expert opinions, and current developments.\n- If needed, refine the search query to improve research quality.\n\nStep 2 — Synthesis Phase:\n- Analyze the Tavily research results.\n- Extract key insights.\n- Identify:\n  - Core theme\n  - Supporting evidence\n  - Practical implications\n  - Future outlook\n\nStep 3 — Article Generation:\n- Write a compelling LinkedIn article of approximately 400 words.\n- Structure the article as follows:\n\n  • Strong hook (first 2–3 lines)\n  • Context or problem statement\n  • Key insights backed by research\n  • Practical takeaways\n  • Forward-looking conclusion\n  • End with 3–5 relevant hashtags\n\nWRITING STYLE REQUIREMENTS:\n- Professional yet conversational tone.\n- Clear and concise.\n- No emojis unless contextually appropriate.\n- Avoid overly technical jargon.\n- Avoid generic filler content.\n- Do not mention Tavily, search tool, research tool, or internal processes.\n- Do not mention that research was performed.\n- Write as if you are a human industry expert sharing insights.\n\nQUALITY CONTROL:\n- Ensure facts align with research findings.\n- Avoid hallucinating statistics.\n- Do not fabricate sources.\n- If research data is limited, state insights carefully without inventing details.\n-Today's Date :{{ $now }}. Today's date  is shared  so that  you  can fetch latest informaation from the  search  tool\nFinal Output:\nReturn only the finished LinkedIn article.\nNo explanations.\nNo tool logs.\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        64,
+        0
+      ],
+      "id": "44a4ce4d-7d45-4c91-99dd-dba41cb5dcaf",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-5-mini",
+          "mode": "list",
+          "cachedResultName": "gpt-5-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        -80,
+        208
+      ],
+      "id": "750c5546-c486-4ab3-af3f-9dcc2be5b4b4",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "5mD8euVeR8OnJ70H",
+          "name": "n8n free OpenAI API credits"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "query": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Query', ``, 'string') }}",
+        "options": {
+          "start_date": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Start_Date', ``, 'string') }}",
+          "end_date": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('End_Date', ``, 'string') }}"
+        }
+      },
+      "type": "@tavily/n8n-nodes-tavily.tavilyTool",
+      "typeVersion": 1,
+      "position": [
+        224,
+        208
+      ],
+      "id": "ae773aa4-6b42-422e-a54e-585b23e2072f",
+      "name": "Search tool",
+      "credentials": {
+        "tavilyApi": {
+          "id": "4J9G3AvNc8EXcKty",
+          "name": "Tavily account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "sendAndWait",
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "message": "=Is this good to go?\n {{ $json.output }}",
+        "approvalOptions": {
+          "values": {
+            "approvalType": "double"
+          }
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        416,
+        0
+      ],
+      "id": "e414f984-2e03-4184-bd29-b3629a411999",
+      "name": "Send message and wait for response",
+      "webhookId": "c064c03b-a5a3-40da-95f1-baf26637178b",
+      "credentials": {
+        "telegramApi": {
+          "id": "3nA12LqwBwysogQr",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "17344c10-0730-40b9-a5b7-dece7f3a7960",
+              "leftValue": "={{ $json.data.approved }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        624,
+        0
+      ],
+      "id": "3da9e619-35d0-44c8-b41e-a998ab9c7a31",
+      "name": "If"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search tool": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Send message and wait for response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send message and wait for response": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [],
+        []
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false,
+    "timeSavedMode": "fixed",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "versionId": "958945c2-719b-42f4-8f43-ae1745bceee8",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "4227a75b6d46c5cf41f1d80deeb5cc32215e53da39ca428fb164beaeb5116f85"
+  },
+  "id": "Y3Mi-B4t3scRtU_S0c6qV",
+  "tags": []
+}
